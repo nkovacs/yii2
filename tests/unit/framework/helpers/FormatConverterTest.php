@@ -49,6 +49,40 @@ class FormatConverterTest extends TestCase
         $this->assertEquals('\'o\'\'clock\'', FormatConverter::convertDateIcuToJui('\'o\'\'clock\''));
     }
 
+    public function escapedPhpProvider() {
+        return [
+            ["\M\\\\'\\:n"],
+            ["\\'n"],
+            ["'n"],
+            ["' n"],
+            ["' n"],
+            ["''' n"],
+            ["'\\а\\в\\гn"],
+            ["'\\an"],
+            ["'n\\"],
+            ["y.m.d \\a\\t H:i:s"],
+            ["y.m.d \\'\\a\\t\\' H:i:s"],
+        ];
+    }
+
+    /**
+     *
+     * @dataProvider escapedPhpProvider
+     */
+    public function testIntlEscapedPhpToIcu($format)
+    {
+        $formatter = new Formatter(['locale' => 'en-US']);
+
+        $converted = FormatConverter::convertDatePhpToIcu($format);
+        $time = '2014-8-24 1:1:1';
+
+        $this->assertSame(
+            date($format, strtotime($time)),
+            $formatter->asDate($time, $converted),
+            $converted
+        );
+    }
+
     public function testIntlOneDigitIcu()
     {
         $formatter = new Formatter(['locale' => 'en-US']);

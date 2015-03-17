@@ -250,7 +250,7 @@ class BaseFormatConverter
     public static function convertDatePhpToIcu($pattern)
     {
         // http://php.net/manual/en/function.date.php
-        return strtr($pattern, [
+        $replacements = [
             // Day
             'd' => 'dd',    // Day of the month, 2 digits with leading zeros 	01 to 31
             'D' => 'eee',   // A textual representation of a day, three letters 	Mon through Sun
@@ -295,7 +295,57 @@ class BaseFormatConverter
             'c' => 'yyyy-MM-dd\'T\'HH:mm:ssxxx', // ISO 8601 date, e.g. 2004-02-12T15:19:21+00:00
             'r' => 'eee, dd MMM yyyy HH:mm:ss xx', // RFC 2822 formatted date, Example: Thu, 21 Dec 2000 16:01:07 +0200
             'U' => '',      // Seconds since the Unix Epoch (January 1 1970 00:00:00 GMT)
-        ]);
+        ];
+
+        $characters = preg_split('//u', $pattern, -1, PREG_SPLIT_NO_EMPTY);
+        // normalize characters (backslash is optional for unrecognized characters)
+        $prev = false;
+        $normalized = [];
+        foreach ($characters as $character) {
+            if ($prev !== '\\' && $character === '\\') {
+                $prev = '\\';
+                continue;
+            }
+            if ($prev === '\\' || !array_key_exists($character, $replacements)) {
+                $prev = false;
+                if ($character == "'") {
+                    $character = "''"; // quote must be doubled inside escape block
+                }
+                $normalized[] = [true, $character];
+            } else {
+                $normalized[] = [false, $replacements[$character]];
+            }
+        }
+
+        $prevEscaped = false;
+        $escapeBlock = "";
+        $newPattern = "";
+        foreach ($normalized as $charInfo) {
+            $escaped = $charInfo[0];
+            $character = $charInfo[1];
+
+            if ($escaped) {
+                $escapeBlock .= $character;
+            } else {
+                if ($prevEscaped) {
+                    // if the escape block only contains quotes, it must not be surrounded by quotes,
+                    // because two single quotes produce one,
+                    // e.g. '''' becomes ('')('') -> '' instead of '('')' -> '
+                    // if there are any other characters, it's not a problem,
+                    // e.g. 'a''b' becomes 'a('')b' -> a'b
+                    if (strlen(str_replace("'", '', $escapeBlock)) == 0) {
+                        $newPattern .= $escapeBlock;
+                    } else {
+                        $newPattern .= "'" . $escapeBlock . "'";
+                    }
+                    $escapeBlock = "";
+                }
+                $newPattern .= $character;
+            }
+
+            $prevEscaped = $escaped;
+        }
+        return $newPattern;
     }
 
     /**
