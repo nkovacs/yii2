@@ -164,6 +164,9 @@ yii = (function ($) {
                     action = window.location.href;
                 }
                 $form = $('<form method="' + method + '"></form>');
+                if ($e.data('form-pjax') !== undefined) {
+                    $form.attr('data-pjax', true);
+                }
                 $form.attr('action', action);
                 var target = $e.attr('target');
                 if (target) {
@@ -179,7 +182,7 @@ yii = (function ($) {
                         $form.append('<input name="' + csrfParam + '" value="' + pub.getCsrfToken() + '" type="hidden">');
                     }
                 }
-                $form.hide().appendTo('body');
+                $form.hide().insertAfter($e);
             }
 
             var activeFormData = $form.data('yiiActiveForm');
