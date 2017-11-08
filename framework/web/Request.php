@@ -202,7 +202,7 @@ class Request extends \yii\base\Request
      * Matches are tried in order and searching is stopped when IP matches.
      *
      * > Info: Matching is performed using [[IpValidator]].
-     * See [[IpValidator::::setRanges()|IpValidator::setRanges()]]
+     * See [[IpValidator::setRanges()|IpValidator::setRanges()]]
      * and [[IpValidator::networks]] for advanced matching.
      *
      * @see $secureHeaders
